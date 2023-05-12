@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace SpaceTraders;
+namespace SpaceTradersAPI;
 
 internal class RetryHandler : DelegatingHandler
 {
@@ -12,8 +12,6 @@ internal class RetryHandler : DelegatingHandler
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         var response = await base.SendAsync(request, cancellationToken);
-        if (response.IsSuccessStatusCode)
-            return response;
 
         while (response.StatusCode == HttpStatusCode.TooManyRequests)
         {

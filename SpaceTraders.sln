@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33627.172
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpaceTraders", "SpaceTraders.csproj", "{1B49B335-B545-492B-BE00-D4337974A6E2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpaceTradersAPI", "SpaceTradersAPI\SpaceTradersAPI.csproj", "{02BFBC50-97FD-4DAB-A93B-3E0C3BF649FF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpaceTradersBot", "SpaceTradersBot\SpaceTradersBot.csproj", "{7E08C029-2824-4586-ACDA-FE4E01E21282}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +13,19 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{1B49B335-B545-492B-BE00-D4337974A6E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1B49B335-B545-492B-BE00-D4337974A6E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1B49B335-B545-492B-BE00-D4337974A6E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1B49B335-B545-492B-BE00-D4337974A6E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{02BFBC50-97FD-4DAB-A93B-3E0C3BF649FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{02BFBC50-97FD-4DAB-A93B-3E0C3BF649FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{02BFBC50-97FD-4DAB-A93B-3E0C3BF649FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{02BFBC50-97FD-4DAB-A93B-3E0C3BF649FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E08C029-2824-4586-ACDA-FE4E01E21282}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E08C029-2824-4586-ACDA-FE4E01E21282}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E08C029-2824-4586-ACDA-FE4E01E21282}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E08C029-2824-4586-ACDA-FE4E01E21282}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {5F52BA7E-ED7B-47BD-A440-A623635CE6C2}
+		SolutionGuid = {2B30E75E-FD40-4B62-83EC-F1CF308E316A}
 	EndGlobalSection
 EndGlobal
