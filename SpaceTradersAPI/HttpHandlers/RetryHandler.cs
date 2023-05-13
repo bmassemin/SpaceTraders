@@ -1,12 +1,16 @@
 ﻿using System.Net;
+using Microsoft.Extensions.Logging;
 
-namespace SpaceTradersAPI;
+namespace SpaceTradersAPI.HttpHandlers;
 
 internal class RetryHandler : DelegatingHandler
 {
-    public RetryHandler()
+    private readonly ILogger _logger;
+
+    public RetryHandler(HttpMessageHandler parent, ILogger logger)
     {
-        InnerHandler = new HttpClientHandler();
+        _logger = logger;
+        InnerHandler = parent;
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -15,6 +19,7 @@ internal class RetryHandler : DelegatingHandler
 
         while (response.StatusCode == HttpStatusCode.TooManyRequests)
         {
+            _logger.LogWarning("Too many requests, throttling...");
             await Task.Delay(1000, cancellationToken);
             response = await base.SendAsync(request, cancellationToken);
         }

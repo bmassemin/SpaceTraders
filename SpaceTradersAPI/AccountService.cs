@@ -20,7 +20,7 @@ public class AccountService
         string token;
         if (!_tokenRepository.Exists(symbol))
         {
-            var data = await _client.RegisterNewAgentAsync(new RegisterNewAgentRequest { Faction = faction, Symbol = symbol });
+            var data = await _client.RegisterNewAgentAsync(symbol, faction);
             token = data.Data.Token;
             await _tokenRepository.SaveTokenAsync(symbol, token);
             _logger.LogInformation($"Account {symbol} registered");
