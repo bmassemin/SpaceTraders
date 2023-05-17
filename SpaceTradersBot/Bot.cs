@@ -1,11 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
 using SpaceTradersAPI;
+using SpaceTradersAPI.Services;
 
 namespace SpaceTradersBot;
 
 internal class Bot
 {
-    private const string SystemSymbol = "X1-DF55";
+    private const string SystemSymbol = "X1-ZA40";
     private readonly ILogger _logger;
     private readonly SpaceTraders _service;
 
@@ -23,7 +24,7 @@ internal class Bot
         var lastPerformed = true;
         while (!cancellationToken.IsCancellationRequested)
         {
-            var actionPerformed = await Resolve(cancellationToken);
+            var actionPerformed = await Resolve();
             if (!actionPerformed && lastPerformed) _logger.LogInformation("No action performed, waiting for the next action");
             lastPerformed = actionPerformed;
 
@@ -31,7 +32,7 @@ internal class Bot
         }
     }
 
-    private async Task<bool> Resolve(CancellationToken cancellationToken)
+    private async Task<bool> Resolve()
     {
         var agent = await _service.GetAgent();
         var contract = await GetCurrentContract();

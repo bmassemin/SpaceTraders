@@ -1,5 +1,4 @@
-using Microsoft.Extensions.Logging;
-using Moq;
+using SpaceTradersAPI.Services;
 
 namespace SpaceTradersAPI.Tests;
 
@@ -12,8 +11,6 @@ public class ServiceTest
     public async Task GetAllTest(int total)
     {
         var symbol = "test";
-        var loggerMock = new Mock<ILogger>();
-        var clientMock = new Mock<Client>();
 
         var remaining = total;
         var fetcher = new Func<int, int, Task<DataGenerics<string[]>>>((innerPage, innerLimit) =>
@@ -34,7 +31,7 @@ public class ServiceTest
             return result;
         });
 
-        var service = new SpaceTraders(loggerMock.Object, clientMock.Object, symbol);
+        var service = new SpaceTraders(null, null, null, symbol);
 
         var result = await service.GetAll(fetcher);
         Assert.Equal(total, result.Count);

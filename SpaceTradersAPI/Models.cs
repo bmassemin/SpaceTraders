@@ -157,6 +157,20 @@ public class Trait
     public TraitSymbol Symbol { get; set; }
 }
 
+public enum SystemType
+{
+    NEUTRON_STAR
+}
+
+public class System
+{
+    public string Symbol { get; set; }
+    public string SectorSymbol { get; set; }
+    public SystemType Type { get; set; }
+    public int X { get; set; }
+    public int Y { get; set; }
+}
+
 public class Waypoint
 {
     public string SystemSymbol { get; set; }

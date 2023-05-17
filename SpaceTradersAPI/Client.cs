@@ -44,6 +44,8 @@ public class Client
 
     public Task<DataGenerics<Waypoint[]>> ListWaypoints(string systemSymbol, int page, int limit = 20) => _client.GetFromJsonAsync<DataGenerics<Waypoint[]>>($"/v2/systems/{systemSymbol}/waypoints", _defaultSerializationOptions);
 
+    public Task<DataGenerics<System>> GetSystem(string systemSymbol) => _client.GetFromJsonAsync<DataGenerics<System>>($"/v2/systems/{systemSymbol}", _defaultSerializationOptions);
+
     public Task AcceptContact(string contractId) => _client.PostAsync($"/v2/my/contracts/{contractId}/accept", null);
 
     public Task Navigate(string shipSymbol, string wpSymbol) => _client.PostAsJsonAsync($"/v2/my/ships/{shipSymbol}/navigate", new

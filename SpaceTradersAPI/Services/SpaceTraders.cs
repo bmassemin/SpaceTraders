@@ -1,21 +1,24 @@
 ﻿using System.Net;
 using Microsoft.Extensions.Logging;
 
-namespace SpaceTradersAPI;
+namespace SpaceTradersAPI.Services;
 
 public class SpaceTraders
 {
     private readonly Client _client;
     private readonly ILogger _logger;
+    private readonly ISystemService _systemService;
 
     public SpaceTraders(
         ILogger logger,
         Client client,
+        ISystemService systemService,
         string symbol
     )
     {
         _logger = logger;
         _client = client;
+        _systemService = systemService;
         Symbol = symbol;
     }
 
@@ -48,10 +51,8 @@ public class SpaceTraders
 
     public Task<List<Ship>> GetShips() => GetAll(_client.ListShips);
 
-    public Task<List<Waypoint>> GetWaypoints(string systemSymbol) => GetAll((page, limit) => _client.ListWaypoints(systemSymbol, page, limit));
-
-    public async Task<Waypoint> GetWaypointByType(string systemSymbol, WaypointType wpType) => (await GetWaypoints(systemSymbol)).FirstOrDefault(wp => wp.Type == wpType);
-    public async Task<Waypoint> GetWaypointByTrait(string systemSymbol, TraitSymbol trait) => (await GetWaypoints(systemSymbol)).FirstOrDefault(wp => wp.Traits.Any(t => t.Symbol == trait));
+    public async Task<Waypoint> GetWaypointByType(string systemSymbol, WaypointType wpType) => (await _systemService.ListWaypoints(systemSymbol)).FirstOrDefault(wp => wp.Type == wpType);
+    public async Task<Waypoint> GetWaypointByTrait(string systemSymbol, TraitSymbol trait) => (await _systemService.ListWaypoints(systemSymbol)).FirstOrDefault(wp => wp.Traits.Any(t => t.Symbol == trait));
 
     private async Task<bool> IsShipOnCooldown(string shipSymbol)
     {
