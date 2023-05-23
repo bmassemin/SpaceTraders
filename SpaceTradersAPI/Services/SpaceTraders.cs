@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using Microsoft.Extensions.Logging;
+using SpaceTradersAPI.Repositories;
 
 namespace SpaceTradersAPI.Services;
 
@@ -7,18 +8,21 @@ public class SpaceTraders
 {
     private readonly Client _client;
     private readonly ILogger _logger;
+    private readonly ShipLockRepository _shipLockRepository;
     private readonly ISystemService _systemService;
 
     public SpaceTraders(
         ILogger logger,
         Client client,
         ISystemService systemService,
+        ShipLockRepository shipLockRepository,
         string symbol
     )
     {
         _logger = logger;
         _client = client;
         _systemService = systemService;
+        _shipLockRepository = shipLockRepository;
         Symbol = symbol;
     }
 
@@ -56,6 +60,9 @@ public class SpaceTraders
 
     private async Task<bool> IsShipOnCooldown(string shipSymbol)
     {
+        if (await _shipLockRepository.IsUnavailable(shipSymbol))
+            return true;
+
         var resp = await _client.GetShipCooldown(shipSymbol);
         return resp.StatusCode == HttpStatusCode.OK;
     }
@@ -86,14 +93,17 @@ public class SpaceTraders
     public async Task Navigate(Ship ship, string wpSymbol)
     {
         _logger.LogDebug($"Ship {ship.Symbol} is navigating to {wpSymbol}");
-        await _client.Navigate(ship.Symbol, wpSymbol);
+        var response = await _client.Navigate(ship.Symbol, wpSymbol);
         ship.Nav.Status = NavStatus.IN_TRANSIT;
+        var arrivalTtl = response.Data.Route.Arrival - DateTime.Now;
+        await _shipLockRepository.SetUnavailable(ship.Symbol, arrivalTtl);
     }
 
-    public Task Extract(string shipSymbol)
+    public async Task Extract(string shipSymbol)
     {
         _logger.LogDebug($"Ship {shipSymbol} is extracting resources");
-        return _client.Extract(shipSymbol);
+        var extract = await _client.Extract(shipSymbol);
+        await _shipLockRepository.SetUnavailable(shipSymbol, TimeSpan.FromSeconds(extract.Data.Cooldown.RemainingSeconds));
     }
 
     public async Task<Cargo> GetShipCargo(string shipSymbol)

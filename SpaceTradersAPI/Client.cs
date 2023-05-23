@@ -48,12 +48,20 @@ public class Client
 
     public Task AcceptContact(string contractId) => _client.PostAsync($"/v2/my/contracts/{contractId}/accept", null);
 
-    public Task Navigate(string shipSymbol, string wpSymbol) => _client.PostAsJsonAsync($"/v2/my/ships/{shipSymbol}/navigate", new
+    public async Task<DataGenerics<Nav>> Navigate(string shipSymbol, string wpSymbol)
     {
-        WaypointSymbol = wpSymbol
-    }, _defaultSerializationOptions);
+        var response = await _client.PostAsJsonAsync($"/v2/my/ships/{shipSymbol}/navigate", new
+        {
+            WaypointSymbol = wpSymbol
+        }, _defaultSerializationOptions);
+        return await response.Content.ReadFromJsonAsync<DataGenerics<Nav>>();
+    }
 
-    public Task Extract(string shipSymbol) => _client.PostAsync($"/v2/my/ships/{shipSymbol}/extract", null);
+    public async Task<DataGenerics<ExtractResponse>> Extract(string shipSymbol)
+    {
+        var response = await _client.PostAsync($"/v2/my/ships/{shipSymbol}/extract", null);
+        return await response.Content.ReadFromJsonAsync<DataGenerics<ExtractResponse>>();
+    }
 
     public Task<HttpResponseMessage> GetShipCooldown(string shipSymbol) => _client.GetAsync($"/v2/my/ships/{shipSymbol}/cooldown");
 

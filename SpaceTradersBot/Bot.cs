@@ -6,7 +6,7 @@ namespace SpaceTradersBot;
 
 internal class Bot
 {
-    private const string SystemSymbol = "X1-ZA40";
+    private const string SystemSymbol = "X1-VS75";
     private readonly ILogger _logger;
     private readonly SpaceTraders _service;
 

@@ -11,10 +11,10 @@ public enum Faction
 
 public class DataResponse
 {
-    public Data Data { get; set; }
+    public DataRegister Data { get; set; }
 }
 
-public class Data
+public class DataRegister
 {
     public string Token { get; set; }
     public Agent Agent { get; set; }
@@ -71,6 +71,8 @@ public class Route
 {
     public Position Departure { get; set; }
     public Position Destination { get; set; }
+    public DateTime DepartureTime { get; set; }
+    public DateTime Arrival { get; set; }
 }
 
 public class Nav
@@ -203,4 +205,17 @@ public class Cargo
 public enum ShipType
 {
     SHIP_MINING_DRONE
+}
+
+public class Cooldown
+{
+    public string ShipSymbol { get; set; }
+    public int TotalSeconds { get; set; }
+    public int RemainingSeconds { get; set; }
+    public DateTime Expiration { get; set; }
+}
+
+public class ExtractResponse
+{
+    public Cooldown Cooldown { get; set; }
 }
