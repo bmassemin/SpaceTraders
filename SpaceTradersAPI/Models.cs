@@ -233,9 +233,16 @@ public class Deliver
     public int UnitsFulfilled { get; set; }
 }
 
+public class Payment
+{
+    public int OnAccepted { get; set; }
+    public int OnFulfilled { get; set; }
+}
+
 public class Terms
 {
     public Deliver[] Deliver { get; set; }
+    public Payment Payment { get; set; }
 }
 
 public class Contract
