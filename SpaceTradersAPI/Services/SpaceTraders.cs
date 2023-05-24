@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using Microsoft.Extensions.Logging;
 using SpaceTradersAPI.Repositories;
+using static SpaceTradersAPI.Services.Helper;
 
 namespace SpaceTradersAPI.Services;
 
@@ -8,14 +9,14 @@ public class SpaceTraders
 {
     private readonly Client _client;
     private readonly ILogger _logger;
-    private readonly ShipLockRepository _shipLockRepository;
+    private readonly MemoryShipLockRepository _shipLockRepository;
     private readonly ISystemService _systemService;
 
     public SpaceTraders(
         ILogger logger,
         Client client,
         ISystemService systemService,
-        ShipLockRepository shipLockRepository,
+        MemoryShipLockRepository shipLockRepository,
         string symbol
     )
     {
@@ -34,29 +35,10 @@ public class SpaceTraders
         return data.Data;
     }
 
-    public async Task<List<T>> GetAll<T>(Func<int, int, Task<DataGenerics<T[]>>> fetcher)
-    {
-        const int limit = 20;
-
-        var element = new List<T>();
-        var resp = await fetcher(1, limit);
-        element.AddRange(resp.Data);
-        for (var i = resp.Meta.Page + 1;; i++)
-        {
-            if (resp.Meta.Page * limit >= resp.Meta.Total)
-                break;
-
-            resp = await fetcher(i, limit);
-            element.AddRange(resp.Data);
-        }
-
-        return element;
-    }
-
     public Task<List<Ship>> GetShips() => GetAll(_client.ListShips);
 
     public async Task<Waypoint> GetWaypointByType(string systemSymbol, WaypointType wpType) => (await _systemService.ListWaypoints(systemSymbol)).FirstOrDefault(wp => wp.Type == wpType);
-    public async Task<Waypoint> GetWaypointByTrait(string systemSymbol, TraitSymbol trait) => (await _systemService.ListWaypoints(systemSymbol)).FirstOrDefault(wp => wp.Traits.Any(t => t.Symbol == trait));
+    public async Task<Waypoint[]> GetWaypointsByTrait(string systemSymbol, TraitSymbol trait) => (await _systemService.ListWaypoints(systemSymbol)).Where(wp => wp.Traits.Any(t => t.Symbol == trait)).ToArray();
 
     private async Task<bool> IsShipOnCooldown(string shipSymbol)
     {
@@ -95,7 +77,7 @@ public class SpaceTraders
         _logger.LogDebug($"Ship {ship.Symbol} is navigating to {wpSymbol}");
         var response = await _client.Navigate(ship.Symbol, wpSymbol);
         ship.Nav.Status = NavStatus.IN_TRANSIT;
-        var arrivalTtl = response.Data.Route.Arrival - DateTime.Now;
+        var arrivalTtl = response.Data.Nav.Route.Arrival - DateTime.Now;
         await _shipLockRepository.SetUnavailable(ship.Symbol, arrivalTtl);
     }
 
@@ -133,4 +115,39 @@ public class SpaceTraders
     }
 
     public Task PurchaseShip(ShipType shipType, string waypoint) => _client.PurchaseShip(shipType, waypoint);
+
+    public async Task Deliver(Contract contract, Ship ship, Cargo cargo)
+    {
+        if (ship.Nav.Status != NavStatus.DOCKED)
+            throw new Exception("ship is not docked");
+
+        var inv = cargo.GetResourcesMap();
+        foreach (var toDeliver in contract.Terms.Deliver)
+        {
+            if (toDeliver.DestinationSymbol != ship.Nav.WaypointSymbol)
+                continue;
+
+            if (!inv.TryGetValue(toDeliver.TradeSymbol, out var units))
+                continue;
+
+            await _client.DeliverContract(contract.Id, ship.Symbol, toDeliver.TradeSymbol, units);
+        }
+    }
+
+    public Task PurchaseCargo(Ship ship, int units, Trade trade) => _client.PurchaseCargo(ship.Symbol, trade, units);
+
+    public async Task<Market> GetMarket(string systemSymbol, string waypointSymbol) => (await _client.GetMarket(systemSymbol, waypointSymbol)).Data;
+
+    public async Task<string> GetMarketWpWithResource(string systemSymbol, Trade trade)
+    {
+        var wps = await GetWaypointsByTrait(systemSymbol, TraitSymbol.MARKETPLACE);
+        foreach (var wp in wps)
+        {
+            var market = await _systemService.GetMarketWithoutTradingGoods(systemSymbol, wp.Symbol);
+            if (market.Imports.Any(x => x.Symbol == trade))
+                return market.Symbol;
+        }
+
+        return null;
+    }
 }

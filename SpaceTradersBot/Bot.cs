@@ -36,7 +36,6 @@ internal class Bot
     {
         var agent = await _service.GetAgent();
         var contract = await GetCurrentContract();
-        var contractResources = contract.Terms.Deliver.ToDictionary(x => x.TradeSymbol, x => x.UnitsRequired);
         var idleShips = await _service.GetIdleShips();
         if (idleShips.Count == 0)
             return false;
@@ -44,6 +43,7 @@ internal class Bot
         if (agent.Credits > 100_000)
             await BuyShips(SystemSymbol, ShipType.SHIP_MINING_DRONE);
 
+        var status = false;
         foreach (var ship in idleShips)
         {
             if (ship.Nav.SystemSymbol != SystemSymbol)
@@ -52,55 +52,118 @@ internal class Bot
                 continue;
             }
 
-            var cargo = await _service.GetShipCargo(ship.Symbol);
-            if (cargo.Full())
+            switch (ship.Registration.Role)
+            {
+                case ShipRole.COMMAND:
+                    status = status || await ContractLoop(ship, contract, agent);
+                    break;
+                case ShipRole.EXCAVATOR:
+                    status = status || await ExcavatorLoop(ship);
+                    break;
+            }
+        }
+
+        return status;
+    }
+
+    private async Task<bool> ContractLoop(Ship ship, Contract contract, Agent agent)
+    {
+        var term = contract.Terms.Deliver[0];
+        var deliverWp = term.DestinationSymbol;
+        var resource = term.TradeSymbol;
+        var remainingUnits = term.UnitsRequired - term.UnitsFulfilled;
+
+        var cargo = await _service.GetShipCargo(ship.Symbol);
+        if (cargo.Full())
+        {
+            if (ship.Nav.WaypointSymbol == deliverWp)
             {
                 if (ship.Nav.Status == NavStatus.IN_ORBIT)
                     await _service.Dock(ship);
 
-                var soldSomething = false;
-                foreach (var inventory in cargo.Inventory)
-                {
-                    if (inventory.Symbol == Trade.ANTIMATTER)
-                        continue;
-
-                    if (contractResources.TryGetValue(inventory.Symbol, out var resource))
-                    {
-                        _logger.LogInformation($"Ship {ship.Symbol} cargo has {inventory.Units} of {inventory.Symbol} out of {resource} required");
-                        continue;
-                    }
-
-                    await _service.SellCargo(ship.Symbol, inventory.Symbol, inventory.Units);
-                    soldSomething = true;
-                }
-
-                if (!soldSomething)
-                {
-                    _logger.LogWarning($"Ship {ship.Symbol} is still full");
-                    continue;
-                }
+                await _service.Deliver(contract, ship, cargo);
             }
-
-            if (ship.Nav.Status == NavStatus.DOCKED)
-                await _service.Orbit(ship);
-
-            var asteroid = await _service.GetWaypointByType(ship.Nav.SystemSymbol, WaypointType.ASTEROID_FIELD);
-            if (asteroid.Symbol != ship.Nav.WaypointSymbol)
+            else
             {
-                await _service.Navigate(ship, asteroid.Symbol);
-                _logger.LogInformation($"Ship {ship.Symbol} Navigating to an asteroid");
-                continue;
+                await Navigate(ship, deliverWp);
+                return true;
             }
-
-            await _service.Extract(ship.Symbol);
         }
+
+        var marketWp = await _service.GetMarketWpWithResource(SystemSymbol, resource);
+        if (marketWp == null) throw new Exception("Unable to find the required resource for the contract");
+
+        if (marketWp != ship.Nav.WaypointSymbol)
+        {
+            await Navigate(ship, marketWp);
+            return true;
+        }
+
+        if (ship.Nav.Status == NavStatus.IN_ORBIT)
+            await _service.Dock(ship);
+
+        var market = await _service.GetMarket(SystemSymbol, marketWp);
+        var tradeGood = market.TradeGoods?.FirstOrDefault(x => x.Symbol == resource);
+        if (tradeGood == null)
+            throw new Exception("abnormal situation");
+
+        var units = Math.Min(cargo.Free(), remainingUnits);
+        if (tradeGood.PurchasePrice * units > agent.Credits)
+            return false;
+
+        await _service.PurchaseCargo(ship, units, resource);
+
+        await ContractLoop(ship, contract, agent);
 
         return true;
     }
 
+    private async Task<bool> ExcavatorLoop(Ship ship)
+    {
+        var cargo = await _service.GetShipCargo(ship.Symbol);
+        if (cargo.Full())
+        {
+            if (ship.Nav.Status == NavStatus.IN_ORBIT)
+                await _service.Dock(ship);
+
+            foreach (var inventory in cargo.Inventory)
+                await _service.SellCargo(ship.Symbol, inventory.Symbol, inventory.Units);
+        }
+
+        var asteroid = await _service.GetWaypointByType(ship.Nav.SystemSymbol, WaypointType.ASTEROID_FIELD);
+        if (asteroid.Symbol != ship.Nav.WaypointSymbol)
+        {
+            await Navigate(ship, asteroid.Symbol);
+            return true;
+        }
+
+        if (ship.Nav.Status == NavStatus.DOCKED)
+            await _service.Orbit(ship);
+
+        await _service.Extract(ship.Symbol);
+
+        return true;
+    }
+
+    private async Task Navigate(Ship ship, string wp)
+    {
+        _logger.LogInformation($"Ship {ship.Symbol} Navigating to {wp}");
+
+        if (ship.Nav.Status == NavStatus.DOCKED)
+            await _service.Orbit(ship);
+
+        await _service.Navigate(ship, wp);
+    }
+
     private async Task BuyShips(string systemSymbol, ShipType shipType)
     {
-        var shipyard = await _service.GetWaypointByTrait(systemSymbol, TraitSymbol.SHIPYARD);
+        var shipyard = (await _service.GetWaypointsByTrait(systemSymbol, TraitSymbol.SHIPYARD)).FirstOrDefault();
+        if (shipyard == null)
+        {
+            _logger.LogWarning("No shipyard found");
+            return;
+        }
+
         await _service.PurchaseShip(shipType, shipyard.Symbol);
     }
 

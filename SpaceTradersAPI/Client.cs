@@ -26,14 +26,14 @@ public class Client
 
     public void SetToken(string token) => _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-    public async Task<DataResponse> RegisterNewAgentAsync(string symbol, Faction faction)
+    public async Task<DataGenerics<DataRegister>> RegisterNewAgentAsync(string symbol, Faction faction)
     {
         var resp = await _client.PostAsJsonAsync("/v2/register", new
         {
             Symbol = symbol,
             Faction = faction
         }, _defaultSerializationOptions);
-        return await resp.Content.ReadFromJsonAsync<DataResponse>(_defaultSerializationOptions);
+        return await resp.Content.ReadFromJsonAsync<DataGenerics<DataRegister>>(_defaultSerializationOptions);
     }
 
     public Task<DataGenerics<Agent>> AgentDetailsAsync() => _client.GetFromJsonAsync<DataGenerics<Agent>>("/v2/my/agent", _defaultSerializationOptions);
@@ -48,19 +48,20 @@ public class Client
 
     public Task AcceptContact(string contractId) => _client.PostAsync($"/v2/my/contracts/{contractId}/accept", null);
 
-    public async Task<DataGenerics<Nav>> Navigate(string shipSymbol, string wpSymbol)
+    public async Task<DataGenerics<DataNavigate>> Navigate(string shipSymbol, string wpSymbol)
     {
         var response = await _client.PostAsJsonAsync($"/v2/my/ships/{shipSymbol}/navigate", new
         {
             WaypointSymbol = wpSymbol
         }, _defaultSerializationOptions);
-        return await response.Content.ReadFromJsonAsync<DataGenerics<Nav>>();
+
+        return await response.Content.ReadFromJsonAsync<DataGenerics<DataNavigate>>(_defaultSerializationOptions);
     }
 
     public async Task<DataGenerics<ExtractResponse>> Extract(string shipSymbol)
     {
         var response = await _client.PostAsync($"/v2/my/ships/{shipSymbol}/extract", null);
-        return await response.Content.ReadFromJsonAsync<DataGenerics<ExtractResponse>>();
+        return await response.Content.ReadFromJsonAsync<DataGenerics<ExtractResponse>>(_defaultSerializationOptions);
     }
 
     public Task<HttpResponseMessage> GetShipCooldown(string shipSymbol) => _client.GetAsync($"/v2/my/ships/{shipSymbol}/cooldown");
@@ -82,4 +83,19 @@ public class Client
         ShipType = shipType,
         WaypointSymbol = waypoint
     }, _defaultSerializationOptions);
+
+    public Task DeliverContract(string contractId, string shipSymbol, Trade trade, int units) => _client.PostAsJsonAsync($"/v2/my/contracts/{contractId}/deliver", new
+    {
+        ShipSymbol = shipSymbol,
+        TradeSymbol = trade,
+        Units = units
+    }, _defaultSerializationOptions);
+
+    public Task PurchaseCargo(string shipSymbol, Trade trade, int units) => _client.PostAsJsonAsync($"/v2/my/ships/{shipSymbol}/purchase", new
+    {
+        Symbol = trade,
+        Units = units
+    }, _defaultSerializationOptions);
+
+    public Task<DataGenerics<Market>> GetMarket(string systemSymbol, string waypointSymbol) => _client.GetFromJsonAsync<DataGenerics<Market>>($"/v2/systems/{systemSymbol}/waypoints/{waypointSymbol}/market", _defaultSerializationOptions);
 }

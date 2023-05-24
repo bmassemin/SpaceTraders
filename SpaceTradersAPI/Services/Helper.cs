@@ -1,6 +1,6 @@
 ﻿namespace SpaceTradersAPI.Services;
 
-internal static class Helper
+public static class Helper
 {
     public static async Task<List<T>> GetAll<T>(Func<int, int, Task<DataGenerics<T[]>>> fetcher)
     {

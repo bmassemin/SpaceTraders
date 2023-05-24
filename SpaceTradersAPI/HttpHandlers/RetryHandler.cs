@@ -19,7 +19,7 @@ internal class RetryHandler : DelegatingHandler
 
         while (response.StatusCode == HttpStatusCode.TooManyRequests)
         {
-            _logger.LogWarning("Too many requests, throttling...");
+            _logger.LogWarning($"[{request.RequestUri}] Too many requests, throttling...");
             await Task.Delay(1000, cancellationToken);
             response = await base.SendAsync(request, cancellationToken);
         }

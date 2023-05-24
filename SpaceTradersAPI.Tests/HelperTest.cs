@@ -2,7 +2,7 @@ using SpaceTradersAPI.Services;
 
 namespace SpaceTradersAPI.Tests;
 
-public class ServiceTest
+public class HelperTest
 {
     [Theory]
     [InlineData(1)]
@@ -33,7 +33,7 @@ public class ServiceTest
 
         var service = new SpaceTraders(null, null, null, null, symbol);
 
-        var result = await service.GetAll(fetcher);
+        var result = await Helper.GetAll(fetcher);
         Assert.Equal(total, result.Count);
     }
 }

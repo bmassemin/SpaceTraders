@@ -17,7 +17,7 @@ public class ShipLockTest
     [Fact]
     public async Task TestSetUnavailable()
     {
-        var locker = new ShipLockRepository(_db);
+        var locker = new RedisShipLockRepository(_db);
 
         await locker.SetUnavailable("TestSetUnavailable", TimeSpan.MaxValue);
         var value = await _db.StringGetAsync("TestSetUnavailable");
@@ -28,7 +28,7 @@ public class ShipLockTest
     [Fact]
     public async Task TestIsUnavailable()
     {
-        var locker = new ShipLockRepository(_db);
+        var locker = new RedisShipLockRepository(_db);
 
         await locker.SetUnavailable("TestIsUnavailable", TimeSpan.MaxValue);
         var value = await locker.IsUnavailable("TestIsUnavailable");
@@ -39,7 +39,7 @@ public class ShipLockTest
     [Fact]
     public async Task TestIsUnavailable_Available()
     {
-        var locker = new ShipLockRepository(_db);
+        var locker = new RedisShipLockRepository(_db);
 
         var value = await locker.IsUnavailable("TestIsUnavailable_Available");
 

@@ -2,11 +2,11 @@
 
 namespace SpaceTradersAPI.Repositories;
 
-public class ShipLockRepository
+public class RedisShipLockRepository
 {
     private readonly IDatabase _redis;
 
-    public ShipLockRepository(IDatabase redis)
+    public RedisShipLockRepository(IDatabase redis)
     {
         _redis = redis;
     }
